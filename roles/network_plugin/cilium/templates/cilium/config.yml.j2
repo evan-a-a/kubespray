@@ -258,6 +258,9 @@ data:
   enable-bpf-clock-probe: "{{ cilium_enable_bpf_clock_probe }}"
 
   disable-cnp-status-updates: "{{ cilium_disable_cnp_status_updates }}"
+
+  enable-local-redirect-policy: "{{ cilium_enable_local_redirect_policy }}"
+
 {% if cilium_ip_masq_agent_enable %}
 ---
 apiVersion: v1
