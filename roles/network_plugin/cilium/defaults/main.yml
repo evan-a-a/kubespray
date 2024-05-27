@@ -10,6 +10,9 @@ cilium_enable_ipv6: false
 # Enable l2 announcement from cilium to replace Metallb Ref: https://docs.cilium.io/en/v1.14/network/l2-announcements/
 cilium_l2announcements: false
 
+# Set up nodelocaldns using Local Redirect Policies https://docs.cilium.io/en/stable/network/kubernetes/local-redirect-policy/#node-local-dns-cache
+cilium_nodelocaldns: true
+
 # Cilium agent health port
 cilium_agent_health_port: "{%- if cilium_version | regex_replace('v') is version('1.11.6', '>=') -%}9879{%- else -%}9876{%- endif -%}"
 
@@ -272,8 +275,8 @@ cilium_enable_bpf_clock_probe: true
 # -- Whether to enable CNP status updates.
 cilium_disable_cnp_status_updates: true
 
-# Enable local redirect policy support.
-cilium_enable_local_redirect_policy: false
+# Enable local redirect policy support. Required when using cilium_nodelocaldns
+cilium_enable_local_redirect_policy: "{{ cilium_nodelocaldns }}"
 
 # Configure how long to wait for the Cilium DaemonSet to be ready again
 cilium_rolling_restart_wait_retries_count: 30

@@ -16,6 +16,9 @@ spec:
       labels:
         k8s-app: node-local-dns
       annotations:
+{% if cilium_nodelocaldns %}
+        policy.cilium.io/no-track-port: "53"
+{% endif %}
         prometheus.io/scrape: 'true'
         prometheus.io/port: '{{ nodelocaldns_prometheus_port }}'
     spec:
@@ -23,7 +26,11 @@ spec:
         {{ nodelocaldns_ds_nodeselector }}
       priorityClassName: system-node-critical
       serviceAccountName: nodelocaldns
+{% if cilium_nodelocaldns %}
+      hostNetwork: false
+{% else %}
       hostNetwork: true
+{% endif %}
       dnsPolicy: Default  # Don't use cluster DNS.
       tolerations:
       - effect: NoSchedule
@@ -41,12 +48,23 @@ spec:
             memory: {{ nodelocaldns_memory_requests }}
         args:
         - -localip
+{% if cilium_nodelocaldns %}
+        - {{ nodelocaldns_ip }},{{ skydns_server }}
+{% else %}
         - {{ nodelocaldns_ip }}
+{% endif %}
         - -conf
         - /etc/Corefile
-{% if enable_nodelocaldns_secondary %}
+{% if cilium_nodelocaldns %}
+        - -upstreamsvc
+        - kube-dns-upstream
+        - -skipteardown=true
+        - -setupinterface=false
+        - -setupiptables=false
+{% elif enable_nodelocaldns_secondary %}
         - -skipteardown
 {% else %}
+        - coredns
         ports:
         - containerPort: 53
           name: dns
@@ -69,7 +87,9 @@ spec:
 {% endif %}
         livenessProbe:
           httpGet:
+{% if not cilium_nodelocaldns %}
             host: {{ nodelocaldns_ip }}
+{% endif %}
             path: /health
             port: {{ nodelocaldns_health_port }}
             scheme: HTTP
@@ -78,7 +98,9 @@ spec:
           failureThreshold: 10
         readinessProbe:
           httpGet:
+{% if not cilium_nodelocaldns %}
             host: {{ nodelocaldns_ip }}
+{% endif %}
             path: /health
             port: {{ nodelocaldns_health_port }}
             scheme: HTTP

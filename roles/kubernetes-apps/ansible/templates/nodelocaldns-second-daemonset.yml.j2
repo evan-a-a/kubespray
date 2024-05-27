@@ -39,7 +39,24 @@ spec:
           requests:
             cpu: {{ nodelocaldns_cpu_requests }}
             memory: {{ nodelocaldns_memory_requests }}
-        args: [ "-localip", "{{ nodelocaldns_ip }}", "-conf", "/etc/Corefile", "-skipteardown" ]
+        args:
+        - -localip
+{% if cilium_nodelocaldns %}
+        - {{ nodelocaldns_ip }},{{ skydns_server }}
+{% else %}
+        - {{ nodelocaldns_ip }}
+{% endif %}
+        - -conf
+        - /etc/Corefile
+{% if cilium_nodelocaldns %}
+        - -upstreamsvc
+        - kube-dns-upstream
+{% endif %}
+        - -skipteardown
+{% if cilium_nodelocaldns %}
+        - -setupinterface=false
+        - -setupiptables=false
+{% endif %}
         securityContext:
           privileged: true
 {% if nodelocaldns_bind_metrics_host_ip %}
@@ -51,7 +68,9 @@ spec:
 {% endif %}
         livenessProbe:
           httpGet:
+{% if not cilium_nodelocaldns %}
             host: {{ nodelocaldns_ip }}
+{% endif %}
             path: /health
             port: {{ nodelocaldns_health_port }}
             scheme: HTTP
@@ -60,7 +79,9 @@ spec:
           failureThreshold: 10
         readinessProbe:
           httpGet:
+{% if not cilium_nodelocaldns %}
             host: {{ nodelocaldns_ip }}
+{% endif %}
             path: /health
             port: {{ nodelocaldns_health_port }}
             scheme: HTTP

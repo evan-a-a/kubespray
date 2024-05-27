@@ -1,6 +1,6 @@
 [Resolve]
 {% if not dns_early and dns_late %}
-DNS={{ ([nodelocaldns_ip] if enable_nodelocaldns else coredns_server )| list | join(' ') }}
+DNS={{ ([nodelocaldns_ip] if enable_nodelocaldns and not cilium_nodelocaldns else coredns_server )| list | join(' ') }}
 {% endif %}
 FallbackDNS={{ ( upstream_dns_servers|d([]) + nameservers|d([]) + cloud_resolver|d([])) | unique | join(' ') }}
 {% if remove_default_searchdomains and searchdomains|default([])|length != 0 %}
